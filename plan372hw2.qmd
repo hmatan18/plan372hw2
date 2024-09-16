@@ -1,0 +1,6 @@
+---
+title: "plan372hw2"
+format: html
+editor: visual
+---
+
