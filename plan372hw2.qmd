@@ -1,6 +1,131 @@
 ---
 title: "plan372hw2"
-format: html
+format: pdf
 editor: visual
 ---
 
+```{r}
+library(tidyverse)  # library for dealing with tabular data
+library(lubridate) # library for handling dates
+```
+
+```{r}
+data = read_csv(here::here("Fire_Incidents.csv"))
+```
+
+```{r}
+#Change dispatch and arrival times using  ymd_hms function
+data$dispatch_date_time <- ymd_hms(data$dispatch_date_time)
+data$arrive_date_time <- ymd_hms(data$arrive_date_time)
+#Calculate response time in minutes by finding the difference between arrival and dispatch times
+data$response_time <- as.numeric(difftime(data$arrive_date_time, data$dispatch_date_time, units = "mins"))
+#Calculate the average response time, excluding any missing (NA) values
+avg_response_time <- mean(data$response_time, na.rm = TRUE)
+# Print the average response time 
+print(avg_response_time)
+```
+1) It takes Wake County Fire to respond 5.31 minutes on average to respond to incidents.
+
+```{r}
+#Group the data by station and calculate the average response time for each station
+station_response_time <- data |>
+  group_by(station) |> #Group data by station
+  summarize(avg_response_time = mean(response_time, na.rm = TRUE)) |> #Calculate avg response time    for each station, excluding any NA values
+  arrange(avg_response_time) #Arrange by lowest to highest avg response time
+#Print average response time for each station
+print(station_response_time) 
+```
+2) The response times vary by station as seen from the table. The table shows different stations with varying average response times, from as low as 3.72 minutes (station 13) to as high as 8.26 minutes (Station 29).
+
+```{r}
+#Select year from arrive_date_time column
+data$year <- year(data$arrive_date_time)
+#Group data by year and calculate avg response time for each year
+yearly_avg_response <- data |>
+  group_by(year) |> #Group data by year
+  summarize(avg_response_time = mean(response_time, na.rm = TRUE)) #Calculate avg response time for each year, excluding any NA values
+#Plot yearly average response time
+plot(yearly_avg_response$year, #x-axis is Year
+     yearly_avg_response$avg_response_time) #y-axis is avg response time
+```
+
+3) Wake County Fire's response times were relatively stable between 2008 and 2019 with only small fluctuations. However in 2020 there was a sharp increase in response times. Possible reasons for this increase could be the impact from COVID-19. The fire department might also have faced operational challenges like staff shortages, increased health and safety protocols, or other logistical issues.
+
+```{r}
+#Select hour from the dispatch_date_time column 
+data$hour <- hour(data$dispatch_date_time)
+#Group data by hour and count number of fire calls for each hour
+fire_calls <- data |>
+  group_by(hour) |> #Group data by hour
+  tally (name ="fire calls") #Count number of fire calls in each hour, and name column fire calls
+plot(fire_calls) #Plot number of fire calls for each hour
+```
+4) The plot shows that fire calls peak between the hours of 21:00 and 23:00 (9 PM to 11 PM) and the lowest number of fire calls occur between 7:00 and 9:00 (7 AM to 9 AM). This suggests that late evening are the busiest times for the fire department; while the early morning hours have the fewest fire calls.
+
+```{r}
+#Count total number of calls in the dataset
+total_calls <- nrow(data)
+#Filter for fires
+actual_fires <- data |>
+  filter(incident_type >= 100 & incident_type < 200) #Incident codes between 100 and 199 are considered fires
+#Count the number of fire  calls
+number_of_fires <- nrow(actual_fires)
+#Print total number of calls 
+print(total_calls)
+#Print fire calls
+print(number_of_fires)
+```
+
+5) There were 229047 calls to Wake County Fire in this data set. 17231 of them were actual fires.
+
+```{r}
+#Calculate the average response time for actual fires
+avg_response_time_actualfires <- mean(actual_fires$response_time, na.rm = TRUE)
+#Print average response time
+print(avg_response_time)
+#Print average response time for actual fires
+print(avg_response_time_actualfires)
+```
+
+6) The average response time for actual fires is 5.18 minutes while the average response time for all incidents is 5.31 minutes. This means that the response time for actual fires is slightly faster than all incidents.
+
+7) Repeat the analysis for questions 2-4 for actual fires, rather than all incidents.
+
+```{r}
+#7.2
+#Group the data by station and calculate the average response time for each station but this time only from actual fires
+station_response_time_fires <- actual_fires |> 
+  group_by(station) |> #Group data by station
+  summarize(avg_response_time = mean(response_time, na.rm = TRUE)) |> #Calculate avg response time    for each station, excluding any NA values
+  arrange(avg_response_time) #Arrange by lowest to highest avg response time
+print(station_response_time_fires) #Print average response time for each station
+```
+
+7.2) From the data from incidents that are actual fires, the response times still vary by station as seen from the table, but there is a difference in which stations have the fastest and slowest average response time. The table average response times vary from as low as 3.88 minutes (station 3) to as high as 9.77 minutes (station 23).
+
+```{r}
+#3
+#Select year from arrive_date_time column but only from incidents that were actual fires
+actual_fires$year <- year(actual_fires$arrive_date_time)
+#Group data by year and calculate avg response time for each year
+yearly_avg_response_fires <- actual_fires |> 
+  group_by(year) |> #Group data by year
+  summarize(avg_response_time = mean(response_time, na.rm = TRUE)) #Calculate avg response time for each year, excluding any NA values
+#Plot yearly average response time
+plot(yearly_avg_response_fires$year, #x-axis is Year
+     yearly_avg_response_fires$avg_response_time) #y-axis is avg response time
+```
+7.3) Wake County Fire's response times for actual fires were relatively stable except for the sharp peaks in 2009,2014,and 2019. This plot is very different than the overall incidents plot, that only had a peak in 2020. This must mean these peaks are solely fire related.
+
+```{r}
+#4
+#Select hour from the dispatch_date_time column but only from incidents that were actual fires
+actual_fires$hour <- hour(actual_fires$dispatch_date_time)
+#Group data by hour and count number of fire calls for each hour
+fire_calls_fires <- actual_fires |> 
+  group_by(hour) |>  #Group data by hour
+  tally(name = "fire_calls") #Count number of fire calls in each hour, and name column fire calls
+plot(fire_calls_fires) #Plot number of fire calls for each hour
+```
+7.4)
+This plot shows that fire calls peak between the hours of 20:00 and 22:00 (8 PM to 10 PM) and the lowest number of fire calls occur between 8:00 and 10:00 (8 AM to 10 AM). This suggests that late evening are the busiest times for the fire department; while the early morning hours have the fewest fire calls. These times are very similar to the plot of all incidents.
